@@ -1,0 +1,41 @@
+# Xcode
+.DS_Store
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+Packages/
+*.xcodeproj/*
+!.xcodeproj/project.pbxproj
+!.xcodeproj/xcshareddata
+!.xcodeproj/xcshareddata/xcschemes
+*.swiftpm
+.build/
+
+# Cocoapods
+Pods/
+Podfile.lock
+*.xcworkspace
+
+# Carthage
+Carthage/Build/
+Carthage/Checkouts/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+*.ipa
+*.app.dSYM.zip
+*.app.zip
+
+# IDE specific
+.idea/
+.vscode/
