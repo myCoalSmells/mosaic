@@ -25,7 +25,7 @@ struct ContentView: View {
             }
             
             Button(action: capturePhoto) {
-                Text("Capture Photo!")
+                Text("Capture Photo")
                     .font(.title)
                     .padding()
                     .background(Color.blue)
@@ -50,9 +50,6 @@ struct ContentView: View {
                 NetworkManager.shared.fetchImage { image in
                     DispatchQueue.main.async {
                         self.capturedImage = image
-                        if let image = image {
-                            ImageManager.shared.saveImageToCameraRoll(image: image)
-                        }
                         isLoading = false
                     }
                 }
@@ -67,4 +64,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+
 

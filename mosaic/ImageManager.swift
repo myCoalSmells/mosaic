@@ -5,7 +5,7 @@
 //  Created by Liu, Michael on 10/14/24.
 //
 
-
+// we need permissions for this
 import UIKit
 
 class ImageManager {

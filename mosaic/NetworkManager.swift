@@ -11,7 +11,7 @@ import UIKit
 class NetworkManager {
     static let shared = NetworkManager()
     
-    let piIPAddress = "http://<raspberry-pi-ip-address>:5000" // Replace with your Pi's IP address
+    let piIPAddress = "http:localhost:5001" // replace with pi ip address
     
     func capturePhoto(completion: @escaping (Bool) -> Void) {
         guard let url = URL(string: "\(piIPAddress)/capture") else {
