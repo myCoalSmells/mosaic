@@ -25,7 +25,7 @@ struct ContentView: View {
             }
             
             Button(action: capturePhoto) {
-                Text("Capture Photo")
+                Text("Capture Photo!")
                     .font(.title)
                     .padding()
                     .background(Color.blue)
