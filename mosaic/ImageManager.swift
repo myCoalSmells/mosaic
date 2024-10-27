@@ -6,4 +6,13 @@
 //
 
 
-// manage receiving the image and saving it to camera roll
+import UIKit
+
+class ImageManager {
+    static let shared = ImageManager()
+    
+    func saveImageToCameraRoll(image: UIImage) {
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+    }
+}
+
