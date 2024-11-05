@@ -40,35 +40,37 @@ class NetworkManager {
         task.resume()
     }
     
-    func fetchImage(completion: @escaping (UIImage?) -> Void) {
-            guard let url = URL(string: "\(piIPAddress)/image") else {
+    func fetchImage(saveToPhotos: Bool = false, completion: @escaping (UIImage?) -> Void) {
+        guard let url = URL(string: "\(piIPAddress)/image") else {
+            completion(nil)
+            return
+        }
+
+        let task = URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error = error {
+                print("Error fetching image: \(error)")
                 completion(nil)
                 return
             }
-
-            let task = URLSession.shared.dataTask(with: url) { data, _, error in
-                if let error = error {
-                    print("Error fetching image: \(error)")
-                    completion(nil)
-                    return
+            
+            if let data = data, let image = UIImage(data: data) {
+                // Save to Camera Roll if option selected
+                if saveToPhotos {
+                    ImageManager.shared.saveImageToCameraRoll(image: image)
                 }
                 
-                if let data = data, let image = UIImage(data: data) {
-                    // Save to Camera Roll
-                    ImageManager.shared.saveImageToCameraRoll(image: image)
-                    
-                    // Save to local storage with a timestamped filename
-                    let timestamp = Int(Date().timeIntervalSince1970)
-                    let fileName = "photo_\(timestamp).jpg"
-                    ImageManager.shared.saveImageLocally(image: image, fileName: fileName)
-                    
-                    completion(image)
-                } else {
-                    print("Failed to decode image data")
-                    completion(nil)
-                }
+                // Save to local storage with a timestamped filename
+                let timestamp = Int(Date().timeIntervalSince1970)
+                let fileName = "photo_\(timestamp).jpg"
+                ImageManager.shared.saveImageLocally(image: image, fileName: fileName)
+                
+                completion(image)
+            } else {
+                print("Failed to decode image data")
+                completion(nil)
             }
-            task.resume()
         }
+        task.resume()
+    }
 }
 

@@ -10,7 +10,13 @@ import SwiftUI
 struct ContentView: View {
     @State private var capturedImage: UIImage? = nil
     @State private var isLoading = false
-
+    @State private var saveOption = SaveOption.appOnly
+    
+    enum SaveOption: String, CaseIterable {
+        case appOnly = "Save in App"
+        case both = "Save in App + Photos Library"
+    }
+    
     var body: some View {
         NavigationView {
             VStack {
@@ -24,6 +30,19 @@ struct ContentView: View {
                         .font(.headline)
                         .padding()
                 }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Save Location:")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    Picker("", selection: $saveOption) {
+                        ForEach(SaveOption.allCases, id: \.self) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.horizontal)
                 
                 Button(action: capturePhoto) {
                     Text("Capture Photo")
@@ -59,7 +78,7 @@ struct ContentView: View {
         isLoading = true
         NetworkManager.shared.capturePhoto { success in
             if success {
-                NetworkManager.shared.fetchImage { image in
+                NetworkManager.shared.fetchImage(saveToPhotos: saveOption == .both) { image in
                     DispatchQueue.main.async {
                         self.capturedImage = image
                         isLoading = false

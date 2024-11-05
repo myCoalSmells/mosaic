@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ImageManager {
+class ImageManager: NSObject {
     static let shared = ImageManager()
     
     // Directory for local image storage
@@ -16,7 +16,8 @@ class ImageManager {
         return paths[0].appendingPathComponent("CapturedImages")
     }
     
-    init() {
+    override init() {
+        super.init()
         // Create directory if it doesn't exist
         if !FileManager.default.fileExists(atPath: imageDirectoryURL.path) {
             try? FileManager.default.createDirectory(at: imageDirectoryURL, withIntermediateDirectories: true, attributes: nil)
@@ -55,7 +56,15 @@ class ImageManager {
     
     // Save image to camera roll
     func saveImageToCameraRoll(image: UIImage) {
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        UIImageWriteToSavedPhotosAlbum(image, self, #selector(image(_:didFinishSavingWithError:contextInfo:)), nil)
+    }
+    
+    @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+        if let error = error {
+            print("Error saving to photo library: \(error.localizedDescription)")
+        } else {
+            print("Successfully saved image to photo library")
+        }
     }
     
     func loadSavedImageURLs() -> [URL] {

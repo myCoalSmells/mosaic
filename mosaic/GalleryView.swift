@@ -8,14 +8,15 @@
 import SwiftUI
 
 struct GalleryView: View {
-    private var imageURLs: [URL] = ImageManager.shared.loadSavedImageURLs()
+    @State private var imageURLs: [URL] = []
     
     var body: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 10) {
                 ForEach(imageURLs, id: \.self) { url in
-                    if let image = UIImage(contentsOfFile: url.path) {
-                        NavigationLink(destination: ImageDetailView(image: image, imageURL: url)) {
+                    if FileManager.default.fileExists(atPath: url.path),
+                       let image = UIImage(contentsOfFile: url.path) {
+                        NavigationLink(destination: ImageDetailView(image: image, imageURL: url, onDelete: loadImages)) {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFit()
@@ -32,6 +33,11 @@ struct GalleryView: View {
             .padding()
         }
         .navigationTitle("Gallery")
+        .onAppear(perform: loadImages)
+    }
+    
+    private func loadImages() {
+        imageURLs = ImageManager.shared.loadSavedImageURLs()
     }
 }
 
