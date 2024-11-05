@@ -13,48 +13,82 @@ struct ImageDetailView: View {
     let onDelete: () -> Void
     @Environment(\.presentationMode) var presentationMode
     @State private var showingDeleteAlert = false
+    @State private var is3DMode = false
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
-        VStack {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(maxHeight: 400)
+        ZStack {
+            if is3DMode {
+                StereoView(image: image)
+                    .edgesIgnoringSafeArea(.all)
+                    .overlay(
+                        Button(action: { is3DMode = false }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.title)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.black.opacity(0.5))
+                                .clipShape(Circle())
+                        }
+                        .padding(),
+                        alignment: .topLeading
+                    )
+            } else {
+                VStack {
+                    // Existing detail view content
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 400)
+                        .padding()
+                    
+                    Text("File Name: \(imageURL.lastPathComponent)")
+                        .font(.subheadline)
+                        .padding(.top)
+                    
+                    if let creationDate = getFileCreationDate(for: imageURL) {
+                        Text("Captured on: \(creationDate)")
+                            .font(.subheadline)
+                            .padding(.top, 1)
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: { is3DMode = true }) {
+                        Label("View in 3D", systemImage: "view.3d")
+                            .font(.headline)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
+                    
+                    HStack(spacing: 20) {
+                        Button(action: saveToPhotos) {
+                            Label("Save to Photos", systemImage: "square.and.arrow.down")
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        
+                        Button(action: { showingDeleteAlert = true }) {
+                            Label("Delete", systemImage: "trash")
+                                .padding()
+                                .background(Color.red)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                    }
+                    .padding(.bottom)
+                }
                 .padding()
-            
-            Text("File Name: \(imageURL.lastPathComponent)")
-                .font(.subheadline)
-                .padding(.top)
-            
-            if let creationDate = getFileCreationDate(for: imageURL) {
-                Text("Captured on: \(creationDate)")
-                    .font(.subheadline)
-                    .padding(.top, 1)
             }
-            
-            Spacer()
-            
-            HStack(spacing: 20) {
-                Button(action: saveToPhotos) {
-                    Label("Save to Photos", systemImage: "square.and.arrow.down")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                
-                Button(action: { showingDeleteAlert = true }) {
-                    Label("Delete", systemImage: "trash")
-                        .padding()
-                        .background(Color.red)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-            }
-            .padding(.bottom)
         }
-        .padding()
-        .navigationTitle("Image Details")
+        .navigationBarHidden(is3DMode)
+        .navigationTitle(is3DMode ? "" : "Image Details")
         .alert(isPresented: $showingDeleteAlert) {
             Alert(
                 title: Text("Delete Photo"),
@@ -91,6 +125,47 @@ struct ImageDetailView: View {
             return dateFormatter.string(from: creationDate)
         }
         return nil
+    }
+}
+
+struct StereoView: View {
+    let image: UIImage
+    @State private var showControls = false
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .rotationEffect(.degrees(90))
+                    .frame(width: geometry.size.height, height: geometry.size.width)
+                    .background(Color.black)
+                    .onTapGesture {
+                        withAnimation {
+                            showControls.toggle()
+                        }
+                    }
+                
+                if showControls {
+                    VStack {
+                        HStack {
+                            Button(action: { showControls = false }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title)
+                                    .foregroundColor(.white)
+                                    .padding()
+                            }
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding()
+                }
+            }
+            .edgesIgnoringSafeArea(.all)
+        }
+        .statusBar(hidden: true)
     }
 }
 
