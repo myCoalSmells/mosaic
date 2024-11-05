@@ -15,6 +15,7 @@ struct ImageDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var is3DMode = false
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @State private var showingShareSheet = false
     
     var body: some View {
         ZStack {
@@ -66,6 +67,14 @@ struct ImageDetailView: View {
                     .padding(.horizontal)
                     
                     HStack(spacing: 20) {
+                        Button(action: { showingShareSheet = true }) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        
                         Button(action: saveToPhotos) {
                             Label("Save to Photos", systemImage: "square.and.arrow.down")
                                 .padding()
@@ -98,6 +107,9 @@ struct ImageDetailView: View {
                 },
                 secondaryButton: .cancel()
             )
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: [image])
         }
     }
     

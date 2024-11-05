@@ -6,12 +6,17 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct GalleryView: View {
     @State private var imageURLs: [URL] = []
     @State private var selectedURLs: Set<URL> = []
     @State private var isEditing = false
     @State private var showingDeleteAlert = false
+    @State private var showingShareSheet = false
+    @State private var itemsToShare: [Any] = []
+    @State private var showingImagePicker = false
+    @State private var isImporting = false
     
     var body: some View {
         ScrollView {
@@ -20,20 +25,35 @@ struct GalleryView: View {
                     Button(action: { isEditing.toggle() }) {
                         Text(isEditing ? "Done" : "Select")
                     }
-                    
-                    if isEditing {
-                        Spacer()
-                        Button(action: saveSelectedToPhotos) {
-                            Image(systemName: "square.and.arrow.down")
-                        }
-                        Button(action: { showingDeleteAlert = true }) {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
-                        }
+                }
+                
+                Spacer()
+                
+                Button(action: { showingImagePicker = true }) {
+                    Image(systemName: "plus.circle")
+                        .font(.title2)
+                }
+                .disabled(isImporting)
+                
+                if isEditing {
+                    Button(action: shareSelectedPhotos) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    Button(action: saveSelectedToPhotos) {
+                        Image(systemName: "square.and.arrow.down")
+                    }
+                    Button(action: { showingDeleteAlert = true }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
                     }
                 }
             }
             .padding(.horizontal)
+            
+            if isImporting {
+                ProgressView("Importing photos...")
+                    .padding()
+            }
             
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 10) {
                 ForEach(imageURLs, id: \.self) { url in
@@ -69,6 +89,12 @@ struct GalleryView: View {
                 secondaryButton: .cancel()
             )
         }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: itemsToShare)
+        }
+        .sheet(isPresented: $showingImagePicker) {
+            PhotoPicker(completion: handleSelectedImages)
+        }
     }
     
     private func loadImages() {
@@ -92,6 +118,35 @@ struct GalleryView: View {
             try? FileManager.default.removeItem(at: url)
         }
         loadImages()
+    }
+    
+    private func shareSelectedPhotos() {
+        itemsToShare = selectedURLs.compactMap { url in
+            UIImage(contentsOfFile: url.path)
+        }
+        showingShareSheet = true
+    }
+    
+    private func handleSelectedImages(_ images: [UIImage]) {
+        guard !images.isEmpty else { return }
+        
+        isImporting = true
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            for image in images {
+                let timestamp = Int(Date().timeIntervalSince1970 * 1000) // milliseconds for uniqueness
+                let fileName = "photo_\(timestamp).jpg"
+                if let url = ImageManager.shared.saveImageLocally(image: image, fileName: fileName) {
+                    DispatchQueue.main.async {
+                        imageURLs.append(url)
+                    }
+                }
+            }
+            
+            DispatchQueue.main.async {
+                isImporting = false
+            }
+        }
     }
 }
 
@@ -126,6 +181,66 @@ struct ImageThumbnailView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
+    }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct PhotoPicker: UIViewControllerRepresentable {
+    let completion: ([UIImage]) -> Void
+    @Environment(\.presentationMode) var presentationMode
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.selectionLimit = 0  // 0 means no limit
+        config.filter = .images
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: PhotoPicker
+        
+        init(_ parent: PhotoPicker) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            parent.presentationMode.wrappedValue.dismiss()
+            
+            let dispatchGroup = DispatchGroup()
+            var images: [UIImage] = []
+            
+            for result in results {
+                dispatchGroup.enter()
+                result.itemProvider.loadObject(ofClass: UIImage.self) { (object, error) in
+                    defer { dispatchGroup.leave() }
+                    if let image = object as? UIImage {
+                        images.append(image)
+                    }
+                }
+            }
+            
+            dispatchGroup.notify(queue: .main) {
+                self.parent.completion(images)
+            }
+        }
     }
 }
 
