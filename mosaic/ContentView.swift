@@ -12,35 +12,47 @@ struct ContentView: View {
     @State private var isLoading = false
 
     var body: some View {
-        VStack {
-            if let image = capturedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 300)
-            } else {
-                Text("Press capture to take a stereoscopic photo!")
-                    .font(.headline)
-                    .padding()
-            }
-            
-            Button(action: capturePhoto) {
-                Text("Capture Photo")
-                    .font(.title)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+        NavigationView {
+            VStack {
+                if let image = capturedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 300)
+                } else {
+                    Text("Press capture to take a stereoscopic photo!")
+                        .font(.headline)
+                        .padding()
+                }
+                
+                Button(action: capturePhoto) {
+                    Text("Capture Photo")
+                        .font(.title)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .padding()
+                .disabled(isLoading)
+                
+                if isLoading {
+                    ProgressView()
+                        .padding()
+                }
+                
+                NavigationLink(destination: GalleryView()) {
+                    Text("View Gallery")
+                        .font(.title2)
+                        .padding()
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(10)
+                }
+                .padding(.top)
             }
             .padding()
-            .disabled(isLoading)
-            
-            if isLoading {
-                ProgressView()
-                    .padding()
-            }
+            .navigationTitle("Mosaic")
         }
-        .padding()
     }
     
     private func capturePhoto() {
@@ -64,5 +76,7 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+
+
 
 
