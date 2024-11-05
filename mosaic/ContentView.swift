@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var capturedImage: UIImage? = nil
     @State private var isLoading = false
     @State private var saveOption = SaveOption.appOnly
+    private let hapticFeedback = UINotificationFeedbackGenerator()
     
     enum SaveOption: String, CaseIterable {
         case appOnly = "Save in App"
@@ -76,16 +77,26 @@ struct ContentView: View {
     
     private func capturePhoto() {
         isLoading = true
+        hapticFeedback.prepare()
+        
         NetworkManager.shared.capturePhoto { success in
             if success {
                 NetworkManager.shared.fetchImage(saveToPhotos: saveOption == .both) { image in
                     DispatchQueue.main.async {
                         self.capturedImage = image
-                        isLoading = false
+                        self.isLoading = false
+                        if image != nil {
+                            self.hapticFeedback.notificationOccurred(.success)
+                        } else {
+                            self.hapticFeedback.notificationOccurred(.error)
+                        }
                     }
                 }
             } else {
-                isLoading = false
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    self.hapticFeedback.notificationOccurred(.error)
+                }
                 print("Failed to capture photo")
             }
         }
